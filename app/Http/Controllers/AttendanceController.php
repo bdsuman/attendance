@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Http\Requests\AttendanceRequest;
+use App\Http\Resources\AttendanceResource;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 class AttendanceController extends Controller
@@ -23,7 +24,7 @@ class AttendanceController extends Controller
         $perPage = (int) $request->input('per_page', 10);
         $attendances = $query->orderBy('entry_date', 'desc')->paginate($perPage);
 
-        return $this->success($attendances, 'Attendance list retrieved successfully');
+        return $this->success(AttendanceResource::collection($attendances), 'Attendance list retrieved successfully');
     }
 
    
@@ -70,7 +71,7 @@ class AttendanceController extends Controller
                 'entry_date' => $entryDate,
                 'check_in' => $now,
             ]);
-            return $this->success($attendance, 'Check-in recorded', 201);
+            return $this->success(new AttendanceResource($attendance), 'Check-in recorded', 201);
         }
 
         // Attendance exists — enforce rules
@@ -129,7 +130,7 @@ class AttendanceController extends Controller
      */
     public function show(Attendance $attendance)
     {
-        return $this->success($attendance, 'Attendance details retrieved successfully');
+        return $this->success(new AttendanceResource($attendance), 'Attendance details retrieved successfully');
     }
 
   

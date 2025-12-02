@@ -23,8 +23,7 @@ class AttendanceRequest extends FormRequest
     {
         return [
             // Accept either `employee_id` or `emp_id` in request body
-            'employee_id' => 'required_without:emp_id|nullable|integer|exists:employees,id',
-            'emp_id' => 'required_without:employee_id|nullable|integer|exists:employees,id',
+            'employee_id' => 'required|integer|exists:employees,id',
 
             'shift_id' => 'required|integer|exists:shifts,id',
 

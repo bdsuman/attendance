@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('Attendance', function (Blueprint $table) {
+        Schema::create('attendances', function (Blueprint $table) {
             $table->id();
             $table->date('entry_date');
             $table->unsignedBigInteger('employee_id');
@@ -22,6 +22,11 @@ return new class extends Migration
             $table->datetime('check_out')->nullable();
             $table->datetime('break_in')->nullable();
             $table->datetime('break_out')->nullable();
+            $table->integer('worked_seconds')->default(0);
+            $table->decimal('worked_hours', 8, 2)->default(0);
+            $table->string('calculated_status')->nullable()->default('incomplete');
+            $table->integer('late_minutes')->default(0);
+            $table->integer('early_leave_minutes')->default(0);
             $table->timestamps();
         });
     }
@@ -31,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('Attendance');
+        Schema::dropIfExists('attendances');
     }
 };

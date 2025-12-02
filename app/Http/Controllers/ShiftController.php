@@ -12,14 +12,6 @@ use OpenApi\Annotations as OA;
 class ShiftController extends Controller
 {
     /**
-     * @OA\Get(
-     *     path="/api/shifts",
-     *     summary="List shifts",
-     *     tags={"Shifts"},
-     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="search", in="query", @OA\Schema(type="string")),
-     *     @OA\Response(response=200, description="Shift list retrieved")
-     * )
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -43,17 +35,6 @@ class ShiftController extends Controller
         return $this->success($resourceCollection->response()->getData(true), 'Shift list retrieved successfully');
     }
     /**
-     * @OA\Post(
-     *     path="/api/shifts",
-     *     summary="Create shift",
-     *     tags={"Shifts"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(ref="#/components/schemas/ShiftCreate")
-     *     ),
-     *     @OA\Response(response=201, description="Shift created")
-     * )
-     * 
      * Store a newly created resource in storage.
      */
     public function store(StoreShiftRequest $request)
@@ -62,7 +43,7 @@ class ShiftController extends Controller
     {
         try {
             $shift = Shift::create($request->validated());
-            return $this->success($shift, 'Shift created successfully', 201);
+            return $this->success(new ShiftResource($shift), 'Shift created successfully', 201);
         } catch (\Exception $e) {
             return $this->error(null, 'Failed to create shift: ' . $e->getMessage(), 500);
         }
@@ -70,31 +51,14 @@ class ShiftController extends Controller
 
 
     /**
-     * @OA\Get(
-     *     path="/api/shifts/{id}",
-     *     summary="Show shift",
-     *     tags={"Shifts"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Shift retrieved")
-     * )
      *
      * Display the specified resource.
      */
     public function show(Shift $shift)
     {
-        return $this->success($shift, 'Shift details retrieved successfully');
+        return $this->success(new ShiftResource($shift), 'Shift details retrieved successfully');
     }
     /**
-     * @OA\Put(
-     *     path="/api/shifts/{id}",
-     *     summary="Update shift",
-     *     tags={"Shifts"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\RequestBody(
-     *         @OA\JsonContent(ref="#/components/schemas/ShiftUpdate")
-     *     ),
-     *     @OA\Response(response=200, description="Shift updated")
-     * )
      *
      * Update the specified resource in storage.
      */
@@ -102,20 +66,12 @@ class ShiftController extends Controller
     {
         try {
             $shift->update($request->validated());
-            return $this->success($shift, 'Shift updated successfully');
+            return $this->success(new ShiftResource($shift), 'Shift updated successfully');
         } catch (\Exception $e) {
             return $this->error(null, 'Failed to update shift: ' . $e->getMessage(), 500);
         }
     }
     /**
-     * @OA\Delete(
-     *     path="/api/shifts/{id}",
-     *     summary="Delete shift",
-     *     tags={"Shifts"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Shift deleted")
-     * )
-     *
      * Remove the specified resource from storage.
      */
     public function destroy(Shift $shift)

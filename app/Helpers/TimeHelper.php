@@ -70,3 +70,22 @@ if (! function_exists('seconds_to_hhmm')) {
         return sprintf('%02d:%02d', $hours, $minutes);
     }
 }
+if (! function_exists('seconds_to_mm')) {
+    /**
+     * Convert seconds to HH:MM format.
+     * Returns null for null/empty input.
+     *
+     * @param mixed $seconds
+     * @return string|null
+     */
+    function seconds_to_mm($seconds): ?string
+    {
+        if ($seconds === null || $seconds === '') {
+            return null;
+        }
+
+        $s = (int) $seconds;
+        $minutes = floor($s / 60);
+        return sprintf('%02d', $minutes);
+    }
+}

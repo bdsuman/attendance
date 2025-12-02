@@ -22,8 +22,8 @@ class Shift extends Model
 
     protected $casts = [
         'name'                      => 'string',
-        'start_time'                => 'integer',
-        'end_time'                  => 'integer',
+        // 'start_time'                => 'integer',
+        // 'end_time'                  => 'integer',
         'break_duration'            => 'integer',
         'late_grace_period'         => 'integer',
         'early_leave_grace_period'  => 'integer',

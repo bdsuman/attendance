@@ -34,120 +34,120 @@ Note: Some lockfile entries in `composer.lock` may reference packages resolved o
 3. Install PHP dependencies and assets:
    ```bash
    composer install --prefer-dist
-   composer dump-autoload
-   npm install
-   npm run build
-   ```
-4. Run migrations & seeders (adjust DB connection in `.env`):
-   ```bash
-   php artisan migrate --force
-   php artisan db:seed
-   ```
-5. Start the dev server:
-   ```bash
-   php artisan serve
-   ```
+## Project Workflow (Developer & Deployment)
 
-## Common composer troubleshooting
-- If `composer update` reports PHP version conflicts, run:
-  ```bash
-  composer config platform.php 8.2.0
-  composer update --with-all-dependencies
-  ```
-- If you prefer to regenerate the lockfile from scratch (destructive):
-  ```bash
-  rm composer.lock
-  rm -rf vendor
-  composer config platform.php 8.2.0
-  composer update --with-all-dependencies
-  ```
+This section documents the recommended workflow for developing, testing, releasing and deploying this project. It is intentionally focused on repo-specific practices and commands — not general Laravel documentation.
 
-## Key files & behavior
-- `app/Helpers/TimeHelper.php` — `convert_time_to_seconds()`, `seconds_to_hhmm()` helpers.
-- `app/Models/Shift.php` — stores `start_time` / `end_time` in seconds. The model converts HH:MM inputs to seconds on save.
-- `app/Http/Resources/ShiftResource.php` — exposes `start_time`/`end_time` as `HH:MM` and minute-based fields as minutes.
-- `app/Models/Attendance.php` — computes and persists derived fields via `computeCalculatedFields()` and a Model Observer.
-- `app/Observers/AttendanceObserver.php` — ensures computed fields persist whenever attendances change.
-- `app/Http/Controllers/AttendanceController.php` — single status-driven endpoint to handle `check_in`, `break_in`, `break_out`, and `check_out` actions (see code comments for rules and behavior).
-- `app/Http/Resources/AttendanceResource.php` — returns both raw datetimes and user-friendly HH:MM / computed fields for API consumers.
+1. Branching & PR flow
+  - `main`: stable production code only. Protected branch; require PR reviews and passing CI.
+  - `develop` or feature branch base (optional): integration branch used for ongoing work.
+  - Feature branches: create from `develop` or `main` using `feature/<short-description>`.
+  - Hotfix branches: `hotfix/<ticket-or-issue>` created from `main` to patch production quickly.
+  - Workflow: open a PR against `develop` (or `main` if you use trunk-based flow), assign reviewers, and include testing steps in the PR description.
 
-## Important notes about negative minutes
-- The code clamps `late_minutes` and `early_leave_minutes` to non-negative integers and formats times correctly. If you see negative values in the DB, sanitize:
-  ```sql
-  UPDATE attendances
-  SET late_minutes = GREATEST(0, late_minutes),
-      early_leave_minutes = GREATEST(0, early_leave_minutes);
-  ```
+2. Local development checklist
+  - Create a feature branch: `git checkout -b feature/your-feature`.
+  - Install dependencies:
+    ```bash
+    composer install
+    composer dump-autoload
+    npm install
+    npm run dev    # or `npm run build` for production assets
+    ```
+  - Set up environment: copy `.env.example` to `.env` and set DB + app settings.
+  - Run local migrations and seeders (dev DB recommended):
+    ```bash
+    php artisan migrate
+    php artisan db:seed
+    ```
+  - Run factories for test data when needed.
 
-## API & Documentation
-- API controllers contain OpenAPI annotations. The project previously used L5‑Swagger to generate UI views. To (re)generate docs locally:
-  ```bash
-  php artisan l5-swagger:generate
-  ```
-- A Redoc view is included in `resources/views/redoc.blade.php` (if published). See the `resources/docs/examples/` folder for sample request bodies.
+3. Coding standards & checks
+  - PHP formatting: use `php artisan pint` (pint is included in `require-dev` here).
+  - Static analysis: run any project static tools you prefer (e.g., phpstan/psalm) if added.
+  - JS lint/format: `npm run lint` / `npm run format` if configured.
+  - Test locally before PR:
+    ```bash
+    php artisan test
+    ```
 
-## Tests
-- Basic PHPUnit and feature tests live in `tests/`. Run tests with:
-  ```bash
-  php artisan test
-  ```
+4. API changes & docs
+  - Add OpenAPI annotations to controllers where needed.
+  - Regenerate documentation locally (if using L5‑Swagger):
+    ```bash
+    php artisan l5-swagger:generate
+    ```
+  - If switching to Scribe (optional), run scribe generation after updating composer and config.
 
-## Development notes
-- Use `AttendanceResource` and `ShiftResource` for API responses to ensure consistent formatting.
-- The `computeCalculatedFields()` method compares attendance timestamps (Carbon) to shift start/end calculated by adding seconds from the day's midnight. Shift times and grace periods are stored as seconds in the DB; the resources convert these values for presentation.
+5. Continuous Integration (recommended)
+  - CI should run on every PR and include:
+    - `composer install --prefer-dist --no-interaction`
+    - `composer dump-autoload --no-interaction`
+    - Run tests: `php artisan test`
+    - Run lint/format checks
+    - (Optional) Build front-end assets (`npm ci && npm run build`) if you want to test asset generation in CI
+  - Example: a minimal GitHub Actions job would install PHP, install composer packages, run tests, and report results.
 
-## Contribution
-- Fork, create a branch, make changes, run tests, and open a PR. Keep changes small and target a single behavior change per PR.
+6. Releasing & deployment (recommended manual checklist)
+  - Tag a release in git: `git tag -a vX.Y.Z -m "Release vX.Y.Z"` and `git push origin --tags`.
+  - On the deploy target (or deployment script):
+    ```bash
+    # pull tag or branch
+    git fetch --tags && git checkout vX.Y.Z
 
-## Quick commands summary
-```bash
-composer install
-composer dump-autoload
-composer config platform.php 8.2.0   # if CLI PHP differs
-php artisan migrate --force
-php artisan db:seed
-php artisan l5-swagger:generate   # if using L5-Swagger
-php artisan serve
-```
+    # install PHP deps
+    composer install --no-dev --prefer-dist --optimize-autoloader
 
-## Contact / Submission email
-- See the `EMAIL_SUBMISSION.md` section below for a ready subject and body to use when submitting this repository.
+    # compile assets (if not prebuilt)
+    npm ci && npm run build
 
----
+    # put the app in maintenance mode (optional for downtime deployments)
+    php artisan down --message="Deploying vX.Y.Z"
 
-**Submission email (use as-is or adapt):**
+    # run migrations
+    php artisan migrate --force
 
-Subject: Submit: Attendance (Laravel) — bdsuman
+    # clear/refresh caches
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
 
-Body:
+    # restart queues & workers
+    php artisan queue:restart
 
-Hello,
+    # bring the app back up
+    php artisan up
+    ```
 
-Please find attached/published the Attendance application repository (Laravel) prepared by me for submission.
+7. Zero-downtime & rollback guidance
+  - For zero-downtime, prefer rolling deploys that run migrations in a way that is backward compatible (avoid destructive migration operations that break old code). If you must run breaking migrations, coordinate deploy and workers, and use maintenance mode.
+  - Rollback a release:
+    - If a DB migration must be reverted, run `php artisan migrate:rollback` on the deploy target (only if safe). Ideally restore DB from backup if data-destructive changes occurred.
+    - To revert code, checkout the previous tag and restart services.
 
-Summary:
-- Small Laravel app to manage employees, shifts and attendance entries.
-- Shift times are stored in seconds; helpers convert to/from HH:MM.
-- Single status-driven attendance endpoint (check_in, break_in, break_out, check_out).
-- Computed attendance metrics are persisted (worked_seconds, worked_hours, calculated_status, late_minutes, early_leave_minutes).
+8. Backups & data safety
+  - Before running migrations on production, take a DB backup (dump or snapshot).
+  - Keep a backup retention policy and test restores occasionally.
 
-How to run locally:
-1. Copy `.env.example` → `.env` and set DB credentials.
-2. Ensure PHP 8.2 is used or instruct Composer to resolve for 8.2: `composer config platform.php 8.2.0`.
-3. Run `composer install`, `php artisan migrate --seed`, and `php artisan serve`.
+9. Monitoring & logs
+  - Ensure log rotation is configured for `storage/logs` and your process manager (Supervisor, systemd) is restarting workers when needed.
+  - Add health checks for the app (simple `/health` route) and monitor response times.
 
-Notes:
-- If composer reports conflicts due to packages previously resolved on PHP 8.4, run `composer config platform.php 8.2.0` and then `composer update --with-all-dependencies` to re-resolve for PHP 8.2.
-- If any negative values exist in the `attendances` table for `late_minutes` or `early_leave_minutes`, sanitize them with the SQL provided in the README.
+10. Security & secrets
+  - Do NOT commit `.env` — use secret manager or CI encrypted secrets for production credentials.
+  - Rotate keys and credentials periodically.
 
-If you need me to run additional tests, provide a deployment task, or change the documentation style (Scribe vs L5‑Swagger), tell me which option and I will prepare the changes.
+11. PR / Code review checklist
+  - Does the branch have a descriptive name and meaningful commit messages?
+  - Are tests added/updated for new behavior? Do all tests pass locally?
+  - Is code formatted and linted? Does `php artisan pint` pass?
+  - Are environment/config changes documented and safe for production?
 
-Best regards,
-bdsuman
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+12. Automation & future improvements
+  - Consider adding GitHub Actions workflows that: run tests, generate docs, and publish a `release` artifact (e.g., a prebuilt build or docker image).
+  - Consider adding an automated DB sanitization migration to avoid negative `late_minutes` if required.
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
+If you want, I can add a sample CI workflow file (GitHub Actions) and/or a small `deploy.sh` script that automates the release checklist.
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>

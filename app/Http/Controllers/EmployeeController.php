@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use Illuminate\Http\Request;
+
 class EmployeeController extends Controller
 {
     /**
@@ -15,13 +16,14 @@ class EmployeeController extends Controller
     {
         // Optional: filter by search keyword
         $search = $request->input('search');
-       $employees = Employee::query()
-        ->when($search, function ($q) use ($search) {
-            $q->where('employee_no', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%")
-              ->orWhere('phone', 'like', "%{$search}%");
-        })
-        ->paginate(10);
+        $perPage = (int) $request->input('per_page', 10);
+        $employees = Employee::query()
+            ->when($search, function ($q) use ($search) {
+                $q->where('employee_no', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            })
+            ->paginate($perPage);
         // Return JSON response using your base Controller method
         return $this->success($employees, 'Employee list retrieved successfully');
     }
@@ -29,26 +31,16 @@ class EmployeeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-            public function store(StoreEmployeeRequest $request)
+    public function store(StoreEmployeeRequest $request)
     {
         try {
             // Create a new employee with validated data
             $employee = Employee::create($request->validated());
 
             // If the client expects JSON (API / Swagger UI), return JSON response
-            if ($request->wantsJson() || $request->expectsJson()) {
-                return $this->success($employee, 'Employee created successfully', 201);
-            }
-
-            // Otherwise (typical browser form), redirect to a detail page or index with flash
-            return redirect()->route('employees.show', ['employee' => $employee->id])
-                ->with('success', 'Employee created successfully');
+            return $this->success($employee, 'Employee created successfully', 201);
         } catch (\Exception $e) {
-            if ($request->wantsJson() || $request->expectsJson()) {
-                return $this->error(null, 'Failed to create employee: ' . $e->getMessage(), 500);
-            }
-
-            return back()->withErrors(['error' => 'Failed to create employee: ' . $e->getMessage()]);
+            return $this->error(null, 'Failed to create employee: ' . $e->getMessage(), 500);
         }
     }
 
@@ -58,7 +50,6 @@ class EmployeeController extends Controller
     public function show(Employee $employee)
     {
         return $this->success($employee, 'Employee details retrieved successfully');
-
     }
 
     /**
@@ -66,7 +57,7 @@ class EmployeeController extends Controller
      */
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
-         try {
+        try {
 
             // Update the employee with validated data
             $employee->update($request->validated());
@@ -84,7 +75,7 @@ class EmployeeController extends Controller
      */
     public function destroy(Employee $employee)
     {
-         try {
+        try {
             // Delete the employee
             $employee->delete();
 

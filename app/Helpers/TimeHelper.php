@@ -65,9 +65,15 @@ if (! function_exists('seconds_to_hhmm')) {
         }
 
         $s = (int) $seconds;
+        $sign = '';
+        if ($s < 0) {
+            $sign = '-';
+            $s = abs($s);
+        }
+
         $hours = floor($s / 3600);
         $minutes = floor(($s % 3600) / 60);
-        return sprintf('%02d:%02d', $hours, $minutes);
+        return $sign . sprintf('%02d:%02d', $hours, $minutes);
     }
 }
 if (! function_exists('seconds_to_mm')) {

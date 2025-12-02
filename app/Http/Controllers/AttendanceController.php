@@ -82,7 +82,15 @@ class AttendanceController extends Controller
                 }
                 $attendance->check_in = $now;
                 break;
-
+            case 'check_out':
+                if (empty($attendance->check_in)) {
+                    return $this->error(null, 'Cannot check out before check-in', 400);
+                }
+                if (!empty($attendance->check_out)) {
+                    return $this->error(null, 'Check-out already recorded', 409);
+                }
+                $attendance->check_out = $now;
+                break;
             case 'break_in':
                 if (empty($attendance->check_in)) {
                     return $this->error(null, 'Cannot start break before check-in', 400);
@@ -103,16 +111,6 @@ class AttendanceController extends Controller
                     return $this->error(null, 'Break already ended', 409);
                 }
                 $attendance->break_out = $now;
-                break;
-
-            case 'check_out':
-                if (empty($attendance->check_in)) {
-                    return $this->error(null, 'Cannot check out before check-in', 400);
-                }
-                if (!empty($attendance->check_out)) {
-                    return $this->error(null, 'Check-out already recorded', 409);
-                }
-                $attendance->check_out = $now;
                 break;
 
             default:

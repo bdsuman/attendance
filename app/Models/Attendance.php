@@ -76,24 +76,24 @@ class Attendance extends Model
         if ($shift) {
             $shiftStartSec = $shift->getRawOriginal('start_time') ?? 0;
             $shiftEndSec = $shift->getRawOriginal('end_time') ?? 0;
-            $lateGrace = $shift->getRawOriginal('late_grace_period') ?? 0;
-            $earlyGrace = $shift->getRawOriginal('early_leave_grace_period') ?? 0;
+            $lateGraceSec = $shift->getRawOriginal('late_grace_period') ?? 0;
+            $earlyGraceSec = $shift->getRawOriginal('early_leave_grace_period') ?? 0;
 
             $date = $this->entry_date ? $this->entry_date->toDateString() : Carbon::now()->toDateString();
             $shiftStartTs = Carbon::parse($date)->startOfDay()->addSeconds($shiftStartSec);
             $shiftEndTs = Carbon::parse($date)->startOfDay()->addSeconds($shiftEndSec);
 
             if ($this->check_in) {
-                $graceStart = $shiftStartTs->copy()->addSeconds($lateGrace);
-                if ($this->check_in->greaterThan($graceStart)) {
-                    $lateMinutes = $this->check_in->diffInMinutes($graceStart);
+                $graceStart = $shiftStartTs->copy()->addSeconds($lateGraceSec);
+                    if ($this->check_in->greaterThan($graceStart)) {
+                        $lateMinutes = (int) max(0, $this->check_in->diffInMinutes($graceStart));
                 }
             }
 
             if ($this->check_out) {
-                $graceEnd = $shiftEndTs->copy()->subSeconds($earlyGrace);
-                if ($this->check_out->lessThan($graceEnd)) {
-                    $earlyLeaveMinutes = $graceEnd->diffInMinutes($this->check_out);
+                $graceEnd = $shiftEndTs->copy()->subSeconds($earlyGraceSec);
+                    if ($this->check_out->lessThan($graceEnd)) {
+                        $earlyLeaveMinutes = (int) max(0, $graceEnd->diffInMinutes($this->check_out));
                 }
             }
 

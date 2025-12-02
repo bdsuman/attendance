@@ -18,9 +18,7 @@
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
-        "phpunit/phpunit": "^11.5.3",
-        "zircote/swagger-php": "^5.0.0",
-        "darkaonline/l5-swagger": "^9.0"
+        "phpunit/phpunit": "^11.5.3"
     },
     "autoload": {
         "psr-4": {
@@ -69,8 +67,6 @@
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
-        "openapi:generate": "vendor/bin/openapi --output public/openapi.yaml app",
-        "l5-swagger:generate": "php artisan l5-swagger:generate",
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
         ]

@@ -6,17 +6,9 @@ use App\Models\Employee;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use Illuminate\Http\Request;
-use OpenApi\Annotations as OA;
 class EmployeeController extends Controller
 {
     /**
-        * @OA\Get(
-        *     path="/api/employees",
-        *     summary="List employees",
-        *     tags={"Employees"},
-        *     @OA\Parameter(name="search", in="query", @OA\Schema(type="string")),
-        *     @OA\Response(response=200, description="Employee list retrieved")
-        * )
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -37,40 +29,31 @@ class EmployeeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-            /**
-             * @OA\Post(
-             *     path="/api/employees",
-             *     summary="Create employee",
-             *     tags={"Employees"},
-             *     @OA\RequestBody(@OA\MediaType(mediaType="application/json")),
-             *     @OA\Response(response=201, description="Employee created")
-             * )
-             */
             public function store(StoreEmployeeRequest $request)
     {
         try {
             // Create a new employee with validated data
             $employee = Employee::create($request->validated());
 
-            // Return success response
-            return $this->success($employee, 'Employee created successfully', 201);
+            // If the client expects JSON (API / Swagger UI), return JSON response
+            if ($request->wantsJson() || $request->expectsJson()) {
+                return $this->success($employee, 'Employee created successfully', 201);
+            }
+
+            // Otherwise (typical browser form), redirect to a detail page or index with flash
+            return redirect()->route('employees.show', ['employee' => $employee->id])
+                ->with('success', 'Employee created successfully');
         } catch (\Exception $e) {
-            // Return error response if something goes wrong
-            return $this->error(null, 'Failed to create employee: ' . $e->getMessage(), 500);
+            if ($request->wantsJson() || $request->expectsJson()) {
+                return $this->error(null, 'Failed to create employee: ' . $e->getMessage(), 500);
+            }
+
+            return back()->withErrors(['error' => 'Failed to create employee: ' . $e->getMessage()]);
         }
     }
 
     /**
      * Display the specified resource.
-     */
-    /**
-     * @OA\Get(
-     *     path="/api/employees/{id}",
-     *     summary="Get employee",
-     *     tags={"Employees"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Employee retrieved")
-     * )
      */
     public function show(Employee $employee)
     {
@@ -80,16 +63,6 @@ class EmployeeController extends Controller
 
     /**
      * Update the specified resource in storage.
-     */
-    /**
-     * @OA\Put(
-     *     path="/api/employees/{id}",
-     *     summary="Update employee",
-     *     tags={"Employees"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\RequestBody(@OA\MediaType(mediaType="application/json")),
-     *     @OA\Response(response=200, description="Employee updated")
-     * )
      */
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
@@ -108,15 +81,6 @@ class EmployeeController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     */
-    /**
-     * @OA\Delete(
-     *     path="/api/employees/{id}",
-     *     summary="Delete employee",
-     *     tags={"Employees"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Employee deleted")
-     * )
      */
     public function destroy(Employee $employee)
     {

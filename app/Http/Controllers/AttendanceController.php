@@ -3,25 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Http\Requests\StoreAttendanceRequest;
-use App\Http\Requests\UpdateAttendanceRequest;
+use App\Http\Requests\AttendanceRequest;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use OpenApi\Annotations as OA;
-// DB-level calculations moved to model/observer; no direct DB raw usage here
-
 class AttendanceController extends Controller
 {
     /**
-        * @OA\Get(
-        *     path="/api/attendances",
-        *     summary="List attendances",
-        *     tags={"Attendances"},
-        *     @OA\Parameter(name="employee_id", in="query", @OA\Schema(type="integer")),
-        *     @OA\Parameter(name="entry_date", in="query", @OA\Schema(type="string", format="date")),
-        *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string")),
-        *     @OA\Response(response=200, description="Attendance list retrieved")
-        * )
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -44,16 +31,7 @@ class AttendanceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    /**
-     * @OA\Post(
-     *     path="/api/attendances",
-     *     summary="Record attendance (check_in, check_out, break_in, break_out)",
-     *     tags={"Attendances"},
-     *     @OA\RequestBody(@OA\MediaType(mediaType="application/json")),
-     *     @OA\Response(response=201, description="Attendance recorded")
-     * )
-     */
-    public function store(StoreAttendanceRequest $request)
+    public function store(AttendanceRequest $request)
     {
         // Delegate to the shared processor so other entry points can use same logic
         return $this->processAttendance($request->validated());
@@ -149,15 +127,6 @@ class AttendanceController extends Controller
     /**
      * Display the specified resource.
      */
-    /**
-     * @OA\Get(
-     *     path="/api/attendances/{id}",
-     *     summary="Get attendance",
-     *     tags={"Attendances"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Attendance details retrieved")
-     * )
-     */
     public function show(Attendance $attendance)
     {
         return $this->success($attendance, 'Attendance details retrieved successfully');
@@ -167,15 +136,6 @@ class AttendanceController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     */
-    /**
-     * @OA\Delete(
-     *     path="/api/attendances/{id}",
-     *     summary="Delete attendance",
-     *     tags={"Attendances"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Attendance deleted")
-     * )
      */
     public function destroy(Attendance $attendance)
     {
